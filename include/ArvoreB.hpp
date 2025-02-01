@@ -26,6 +26,8 @@ private:
 
 public:
     ArvoreB() : root(nullptr) {}
+    ~ArvoreB();
+    void deleteNode(Node<T> *&node);
     void insert(T value, int index);
     bool *searchWithOp(T value, const std::string &op, int tam);
 };

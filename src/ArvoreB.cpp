@@ -143,6 +143,24 @@ void ArvoreB<T>::searchWithOpInTree(Node<T> *node, T value, const std::string &o
     searchWithOpInTree(node->right, value, op, result, tam);
 }
 
+template <typename T>
+void ArvoreB<T>::deleteNode(Node<T> *&node)
+{
+    if (node == nullptr)
+    {
+        return;
+    }
+    deleteNode(node->left);
+    deleteNode(node->right);
+    delete node;
+}
+
+template <typename T>
+inline ArvoreB<T>::~ArvoreB()
+{
+    deleteNode(root);
+}
+
 // Explicit template instantiation
 template class ArvoreB<int>;
 template class ArvoreB<float>;

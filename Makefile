@@ -17,7 +17,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable
-TARGET = $(BIN_DIR)/tp2.out
+TARGET = $(BIN_DIR)/tp3.out
 
 # Include directories
 INCLUDES = -I$(INC_DIR)

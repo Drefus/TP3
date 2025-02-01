@@ -8,6 +8,7 @@
 #include <fstream>
 #include <ctime>
 
+// Utility functions
 std::string *split(const std::string &str, const std::string &delimiter, int &numTokens)
 {
     size_t pos = 0;
@@ -58,60 +59,17 @@ std::string convertTimeTToString(time_t dateTime)
     return std::string(buf);
 }
 
-void SistemaPassagem::readData(std::string filename)
+// Comparison functions
+int comparePrice(Voo a, Voo b)
 {
-    std::ifstream file(filename);
-    if (!file.is_open())
-    {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return;
-    }
-
-    file >> numDeVoos;
-    voos = new Voo[numDeVoos];
-    for (int i = 0; i < numDeVoos; i++)
-    {
-        std::string origem, destino;
-        double preco = 0.0;
-        int assentos = 0, paradas = 0;
-        time_t partida = 0, chegada = 0;
-        std::string partidaStr, chegadaStr;
-        file >> origem >> destino >> preco >> assentos >> partidaStr >> chegadaStr >> paradas;
-        partida = convertStringToTimeT(partidaStr);
-        chegada = convertStringToTimeT(chegadaStr);
-
-        voos[i] = Voo(origem, destino, preco, assentos, partida, chegada, paradas);
-        org->insert(origem, i);
-        dst->insert(destino, i);
-        prc->insert(preco, i);
-        sea->insert(assentos, i);
-        dep->insert(partida, i);
-        arr->insert(chegada, i);
-        sto->insert(paradas, i);
-        dur->insert(difftime(chegada, partida), i);
-    }
-
-    file >> numDeOps;
-    for (int i = 0; i < numDeOps; i++)
-    {
-        linhaOP line;
-        file >> line.numDeResultados >> line.ordenation >> line.op;
-        runOp(line);
-    }
-
-    file.close();
-}
-
-int comparePreco(Voo a, Voo b)
-{
-
     if (a.getPreco() == b.getPreco())
     {
         return 0;
     }
     return a.getPreco() < b.getPreco() ? -1 : 1;
 }
-int compareDuracao(Voo a, Voo b)
+
+int compareDuration(Voo a, Voo b)
 {
     if (a.getDuracao() == b.getDuracao())
     {
@@ -120,7 +78,7 @@ int compareDuracao(Voo a, Voo b)
     return a.getDuracao() < b.getDuracao() ? -1 : 1;
 }
 
-int compareParadas(Voo a, Voo b)
+int compareStops(Voo a, Voo b)
 {
     if (a.getParadas() == b.getParadas())
     {
@@ -129,11 +87,26 @@ int compareParadas(Voo a, Voo b)
     return a.getParadas() < b.getParadas() ? -1 : 1;
 }
 
-void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, Voo), int (*desempate2)(Voo, Voo))
+int (*findComparator(char c))(Voo, Voo)
 {
-    for (int i = 0; i < tam; i++)
+    switch (c)
     {
-        for (int j = i + 1; j < tam; j++)
+    case 'p':
+        return comparePrice;
+    case 'd':
+        return compareDuration;
+    case 's':
+        return compareStops;
+    }
+    return nullptr;
+}
+
+// Sorting function
+void stableSort(Voo *arr, int size, int (*comp)(Voo, Voo), int (*tieBreaker1)(Voo, Voo), int (*tieBreaker2)(Voo, Voo))
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = i + 1; j < size; j++)
         {
             if (comp(arr[i], arr[j]) > 0)
             {
@@ -143,15 +116,15 @@ void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, 
             }
             else if (comp(arr[i], arr[j]) == 0)
             {
-                if (desempate(arr[i], arr[j]) > 0)
+                if (tieBreaker1(arr[i], arr[j]) > 0)
                 {
                     Voo temp = arr[i];
                     arr[i] = arr[j];
                     arr[j] = temp;
                 }
-                else if (desempate(arr[i], arr[j]) == 0)
+                else if (tieBreaker1(arr[i], arr[j]) == 0)
                 {
-                    if (desempate2(arr[i], arr[j]) > 0)
+                    if (tieBreaker2(arr[i], arr[j]) > 0)
                     {
                         Voo temp = arr[i];
                         arr[i] = arr[j];
@@ -163,25 +136,55 @@ void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, 
     }
 }
 
-int (*findComp(char c))(Voo, Voo)
+// SistemaPassagem methods
+void SistemaPassagem::readData(std::string filename)
 {
-    switch (c)
+    std::ifstream file(filename);
+    if (!file.is_open())
     {
-    case 'p':
-        return comparePreco;
-    case 'd':
-        return compareDuracao;
-    case 's':
-        return compareParadas;
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
     }
-    return nullptr;
+
+    file >> numFlights;
+    flights = new Voo[numFlights];
+    for (int i = 0; i < numFlights; i++)
+    {
+        std::string origem, destino;
+        double preco = 0.0;
+        int assentos = 0, paradas = 0;
+        time_t partida = 0, chegada = 0;
+        std::string partidaStr, chegadaStr;
+        file >> origem >> destino >> preco >> assentos >> partidaStr >> chegadaStr >> paradas;
+        partida = convertStringToTimeT(partidaStr);
+        chegada = convertStringToTimeT(chegadaStr);
+
+        flights[i] = Voo(origem, destino, preco, assentos, partida, chegada, paradas);
+        originTree->insert(origem, i);
+        destinationTree->insert(destino, i);
+        priceTree->insert(preco, i);
+        seatsTree->insert(assentos, i);
+        departureTree->insert(partida, i);
+        arrivalTree->insert(chegada, i);
+        stopsTree->insert(paradas, i);
+        durationTree->insert(difftime(chegada, partida), i);
+    }
+
+    file >> numOperations;
+    for (int i = 0; i < numOperations; i++)
+    {
+        OperationLine line;
+        file >> line.numResults >> line.orderCriteria >> line.operation;
+        executeOperation(line);
+    }
+
+    file.close();
 }
 
-void SistemaPassagem::runOp(linhaOP line)
+void SistemaPassagem::executeOperation(OperationLine line)
 {
-
     std::string clearOp = "";
-    for (char c : line.op)
+    for (char c : line.operation)
     {
         if (c != '(' && c != ')')
         {
@@ -193,10 +196,10 @@ void SistemaPassagem::runOp(linhaOP line)
 
     std::string *ops = split(clearOp, "&&", numOp);
 
-    bool *result = processar(ops, 0, numOp);
+    bool *result = processOperations(ops, 0, numOp);
 
     int countResult = 0;
-    for (int i = 0; i < numDeVoos; i++)
+    for (int i = 0; i < numFlights; i++)
     {
         if (result[i])
         {
@@ -205,102 +208,119 @@ void SistemaPassagem::runOp(linhaOP line)
     }
     Voo *resultados = new Voo[countResult];
     int indexResult = 0;
-    for (int i = 0; i < numDeVoos; i++)
+    for (int i = 0; i < numFlights; i++)
     {
         if (result[i])
         {
-            resultados[indexResult] = voos[i];
+            resultados[indexResult] = flights[i];
             indexResult++;
         }
     }
 
-    stableSort(resultados, countResult, findComp(line.ordenation[0]), findComp(line.ordenation[1]), findComp(line.ordenation[2]));
+    stableSort(resultados, countResult, findComparator(line.orderCriteria[0]), findComparator(line.orderCriteria[1]), findComparator(line.orderCriteria[2]));
 
-    std::cout << line.numDeResultados << " " << line.ordenation << " " << line.op << std::endl;
-    for (int i = 0; i < line.numDeResultados; i++)
+    std::cout << line.numResults << " " << line.orderCriteria << " " << line.operation << std::endl;
+    for (int i = 0; i < line.numResults; i++)
     {
         std::cout << resultados[i].getOrigem() << " " << resultados[i].getDestino() << " " << resultados[i].getPreco() << " " << resultados[i].getAssentos() << " " << convertTimeTToString(resultados[i].getPartida()) << " " << convertTimeTToString(resultados[i].getChegada()) << " " << resultados[i].getParadas() << std::endl;
     }
+
+    delete[] resultados;
+    delete[] result;
+    delete[] ops;
 }
 
-bool *SistemaPassagem::processar(std::string *ops, int index, int maxindex)
+bool *SistemaPassagem::processOperations(std::string *operations, int index, int maxIndex)
 {
-    if (index == maxindex)
+    if (index == maxIndex)
     {
-        bool *result = new bool[numDeVoos];
-        for (int i = 0; i < numDeVoos; i++)
+        bool *result = new bool[numFlights];
+        for (int i = 0; i < numFlights; i++)
         {
             result[i] = true;
         }
         return result;
     }
-    std::string op = ops[index];
+    std::string op = operations[index];
     std::string type = op.substr(0, 3);
     std::string boolOp = op.substr(3, 2);
     std::string value = op.substr(5, op.size() - 5);
     if (type == "org")
     {
-        return AndResults(org->searchWithOp(value, boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(originTree->searchWithOp(value, boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "dst")
     {
-        return AndResults(dst->searchWithOp(value, boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(destinationTree->searchWithOp(value, boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "prc")
     {
-        return AndResults(prc->searchWithOp(std::stod(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(priceTree->searchWithOp(std::stod(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "sea")
     {
-        return AndResults(sea->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(seatsTree->searchWithOp(std::stoi(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "dep")
     {
-        return AndResults(dep->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(departureTree->searchWithOp(std::stoi(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "arr")
     {
-        return AndResults(arr->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(arrivalTree->searchWithOp(std::stoi(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "sto")
     {
-        return AndResults(sto->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(stopsTree->searchWithOp(std::stoi(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
     else if (type == "dur")
     {
-        return AndResults(dur->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combineResults(durationTree->searchWithOp(std::stoi(value), boolOp, numFlights), processOperations(operations, index + 1, maxIndex), numFlights);
     }
 
     return nullptr;
 }
 
-bool *SistemaPassagem::AndResults(bool *result1, bool *result2, int tam)
+bool *SistemaPassagem::combineResults(bool *result1, bool *result2, int size)
 {
-    bool *result = new bool[tam];
-    for (int i = 0; i < tam; i++)
+    bool *result = new bool[size];
+    for (int i = 0; i < size; i++)
     {
         result[i] = result1[i] && result2[i];
     }
+    delete[] result1;
+    delete[] result2;
     return result;
 }
 
+// Constructor and Destructor
 SistemaPassagem::SistemaPassagem()
+    : originTree(nullptr), destinationTree(nullptr), priceTree(nullptr), seatsTree(nullptr), departureTree(nullptr), arrivalTree(nullptr), stopsTree(nullptr), durationTree(nullptr), flights(nullptr)
 {
 }
 
 SistemaPassagem::~SistemaPassagem()
 {
+    delete originTree;
+    delete destinationTree;
+    delete priceTree;
+    delete seatsTree;
+    delete departureTree;
+    delete arrivalTree;
+    delete stopsTree;
+    delete durationTree;
+    delete[] flights;
 }
 
 void SistemaPassagem::run(std::string filename)
 {
-    org = new ArvoreB<std::string>();
-    dst = new ArvoreB<std::string>();
-    prc = new ArvoreB<double>();
-    sea = new ArvoreB<int>();
-    dep = new ArvoreB<time_t>();
-    arr = new ArvoreB<time_t>();
-    sto = new ArvoreB<int>();
-    dur = new ArvoreB<long int>();
+    originTree = new ArvoreB<std::string>();
+    destinationTree = new ArvoreB<std::string>();
+    priceTree = new ArvoreB<double>();
+    seatsTree = new ArvoreB<int>();
+    departureTree = new ArvoreB<time_t>();
+    arrivalTree = new ArvoreB<time_t>();
+    stopsTree = new ArvoreB<int>();
+    durationTree = new ArvoreB<long int>();
     readData(filename);
 }

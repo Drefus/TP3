@@ -15,6 +15,7 @@ public:
     int qIndices = 0;
     Node();
     Node(T val);
+    ~Node();
     int height();
     void addIndex(int index);
 };

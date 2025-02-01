@@ -41,6 +41,12 @@ int Node<T>::height()
     return 1 + (leftHeight > rightHeight ? leftHeight : rightHeight);
 }
 
+template <typename T>
+inline Node<T>::~Node()
+{
+    delete[] indices;
+}
+
 // Explicit instantiation for the types you need
 template class Node<int>;
 template class Node<float>;
