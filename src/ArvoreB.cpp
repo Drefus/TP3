@@ -1,167 +1,191 @@
 #include "ArvoreB.hpp"
 
+// Função para inserir um valor na árvore
 template <typename T>
-void ArvoreB<T>::insert(T value, int index)
+void ArvoreB<T>::inserir(T valor, int indice)
 {
-    insert(root, value, index);
+    inserir(raiz, valor, indice);
 }
 
+// Função auxiliar para inserir um valor na árvore
 template <typename T>
-void ArvoreB<T>::insert(Node<T> *&node, T value, int index)
+void ArvoreB<T>::inserir(Node<T> *&no, T valor, int indice)
 {
-    if (node == nullptr)
+    if (no == nullptr)
     {
-        node = new Node<T>(value);
-        node->addIndex(index);
-        tam++;
+        no = new Node<T>(valor);
+        no->adicionarIndice(indice);
+        tamanho++;
     }
     else
     {
-        Node<T> *temp = search(value);
+        Node<T> *temp = buscar(valor);
         if (temp != nullptr)
         {
-            temp->addIndex(index);
+            temp->adicionarIndice(indice);
             return;
         }
-        if (value < node->value)
+        if (valor < no->valor)
         {
-            insert(node->left, value, index);
+            inserir(no->esquerda, valor, indice);
         }
-        else if (value > node->value)
+        else if (valor > no->valor)
         {
-            insert(node->right, value, index);
+            inserir(no->direita, valor, indice);
         }
-        balance(node);
-        tam++;
+        balancear(no);
+        tamanho++;
     }
 }
 
+// Função para calcular a altura de um nó
 template <typename T>
-void ArvoreB<T>::balance(Node<T> *&node)
+int ArvoreB<T>::altura(Node<T> *no)
 {
-    if (node->left->height() - node->right->height() > 1)
+    if (no == nullptr)
     {
-        if (node->left->left->height() >= node->left->right->height())
+        return 0;
+    }
+    int alturaEsquerda = altura(no->esquerda);
+    int alturaDireita = altura(no->direita);
+    return 1 + (alturaEsquerda > alturaDireita ? alturaEsquerda : alturaDireita);
+}
+
+// Função para balancear a árvore
+template <typename T>
+void ArvoreB<T>::balancear(Node<T> *&no)
+{
+    if (altura(no->esquerda) - altura(no->direita) > 1)
+    {
+        if (altura(no->esquerda->esquerda) >= altura(no->esquerda->direita))
         {
-            rightRotate(node);
+            rotacaoDireita(no);
         }
         else
         {
-            leftRotate(node->left);
-            rightRotate(node);
+            rotacaoEsquerda(no->esquerda);
+            rotacaoDireita(no);
         }
     }
-    else if (node->right->height() - node->left->height() > 1)
+    else if (altura(no->direita) - altura(no->esquerda) > 1)
     {
-        if (node->right->right->height() >= node->right->left->height())
+        if (altura(no->direita->direita) >= altura(no->direita->esquerda))
         {
-            leftRotate(node);
+            rotacaoEsquerda(no);
         }
         else
         {
-            rightRotate(node->right);
-            leftRotate(node);
+            rotacaoDireita(no->direita);
+            rotacaoEsquerda(no);
         }
     }
 }
 
+// Função para realizar rotação à direita
 template <typename T>
-void ArvoreB<T>::rightRotate(Node<T> *&node)
+void ArvoreB<T>::rotacaoDireita(Node<T> *&no)
 {
-    Node<T> *temp = node->left;
-    node->left = temp->right;
-    temp->right = node;
-    node = temp;
+    Node<T> *temp = no->esquerda;
+    no->esquerda = temp->direita;
+    temp->direita = no;
+    no = temp;
 }
 
+// Função para realizar rotação à esquerda
 template <typename T>
-void ArvoreB<T>::leftRotate(Node<T> *&node)
+void ArvoreB<T>::rotacaoEsquerda(Node<T> *&no)
 {
-    Node<T> *temp = node->right;
-    node->right = temp->left;
-    temp->left = node;
-    node = temp;
+    Node<T> *temp = no->direita;
+    no->direita = temp->esquerda;
+    temp->esquerda = no;
+    no = temp;
 }
 
+// Função para buscar um valor na árvore
 template <typename T>
-Node<T> *ArvoreB<T>::search(T value)
+Node<T> *ArvoreB<T>::buscar(T valor)
 {
-    return search(root, value);
+    return buscar(raiz, valor);
 }
 
+// Função auxiliar para buscar um valor na árvore
 template <typename T>
-Node<T> *ArvoreB<T>::search(Node<T> *node, T value)
+Node<T> *ArvoreB<T>::buscar(Node<T> *no, T valor)
 {
-    if (node == nullptr || node->value == value)
+    if (no == nullptr || no->valor == valor)
     {
-        return node;
+        return no;
     }
-    if (value < node->value)
+    if (valor < no->valor)
     {
-        return search(node->left, value);
+        return buscar(no->esquerda, valor);
     }
     else
     {
-        return search(node->right, value);
+        return buscar(no->direita, valor);
     }
 }
 
+// Função para buscar valores com uma operação específica
 template <typename T>
-bool *ArvoreB<T>::searchWithOp(T value, const std::string &op, int tam)
+bool *ArvoreB<T>::buscarComOperacao(T valor, const std::string &op, int tamanho)
 {
-    bool *result = new bool[tam];
-    for (int i = 0; i < tam; i++)
+    bool *resultado = new bool[tamanho];
+    for (int i = 0; i < tamanho; i++)
     {
-        result[i] = false;
+        resultado[i] = false;
     }
-    searchWithOpInTree(root, value, op, result, tam);
-    return result;
+    buscarComOperacaoNaArvore(raiz, valor, op, resultado, tamanho);
+    return resultado;
 }
 
+// Função auxiliar para buscar valores com uma operação específica na árvore
 template <typename T>
-void ArvoreB<T>::searchWithOpInTree(Node<T> *node, T value, const std::string &op, bool *&result, int tam)
+void ArvoreB<T>::buscarComOperacaoNaArvore(Node<T> *no, T valor, const std::string &op, bool *&resultado, int tamanho)
 {
-    if (node == nullptr)
+    if (no == nullptr)
     {
         return;
     }
 
-    if ((op == "==" && node->value == value) ||
-        (op == "<=" && node->value <= value) ||
-        (op == ">=" && node->value >= value))
+    if ((op == "==" && no->valor == valor) ||
+        (op == "<=" && no->valor <= valor) ||
+        (op == ">=" && no->valor >= valor))
     {
-        for (int i = 0; i < node->qIndices; i++)
+        for (int i = 0; i < no->qntIndices; i++)
         {
-            result[node->indices[i]] = true;
+            resultado[no->indices[i]] = true;
         }
 
         if (op == "==")
             return;
     }
 
-    searchWithOpInTree(node->left, value, op, result, tam);
-    searchWithOpInTree(node->right, value, op, result, tam);
+    buscarComOperacaoNaArvore(no->esquerda, valor, op, resultado, tamanho);
+    buscarComOperacaoNaArvore(no->direita, valor, op, resultado, tamanho);
 }
 
+// Função para deletar um nó da árvore
 template <typename T>
-void ArvoreB<T>::deleteNode(Node<T> *&node)
+void ArvoreB<T>::deletarNo(Node<T> *&no)
 {
-    if (node == nullptr)
+    if (no == nullptr)
     {
         return;
     }
-    deleteNode(node->left);
-    deleteNode(node->right);
-    delete node;
+    deletarNo(no->esquerda);
+    deletarNo(no->direita);
+    delete no;
 }
 
+// Destrutor da árvore
 template <typename T>
 inline ArvoreB<T>::~ArvoreB()
 {
-    deleteNode(root);
+    deletarNo(raiz);
 }
 
-// Explicit template instantiation
+// Instanciação explícita de templates
 template class ArvoreB<int>;
 template class ArvoreB<float>;
 template class ArvoreB<double>;

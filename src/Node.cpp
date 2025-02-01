@@ -2,55 +2,52 @@
 #include <string>
 
 template <typename T>
-Node<T>::Node() : value(T()), head(nullptr), left(nullptr), right(nullptr) {}
+// Construtor padrão
+Node<T>::Node() : valor(T()), cabeca(nullptr), esquerda(nullptr), direita(nullptr)
+{
+}
 
 template <typename T>
-void Node<T>::addIndex(int index)
+// Função para adicionar um índice ao array de índices
+void Node<T>::adicionarIndice(int indice)
 {
-    if (qIndices == 0)
+    if (qntIndices == 0)
     {
         indices = new int[1];
-        indices[0] = index;
-        qIndices++;
+        indices[0] = indice;
+        qntIndices++;
     }
     else
     {
-        int *temp = new int[qIndices + 1];
-        for (int i = 0; i < qIndices; i++)
+        int *temp = new int[qntIndices + 1];
+        for (int i = 0; i < qntIndices; i++)
         {
             temp[i] = indices[i];
         }
-        temp[qIndices] = index;
-        qIndices++;
+        temp[qntIndices] = indice;
+        qntIndices++;
         delete[] indices;
         indices = temp;
     }
 }
 
 template <typename T>
-Node<T>::Node(T val) : value(val), head(nullptr), left(nullptr), right(nullptr) {}
-template <typename T>
-int Node<T>::height()
+// Construtor com valor inicial
+Node<T>::Node(T val) : valor(val), cabeca(nullptr), esquerda(nullptr), direita(nullptr)
 {
-    if (this == nullptr)
-    {
-        return 0;
-    }
-    int leftHeight = left->height();
-    int rightHeight = right->height();
-    return 1 + (leftHeight > rightHeight ? leftHeight : rightHeight);
 }
 
 template <typename T>
+// Destrutor para liberar memória alocada
 inline Node<T>::~Node()
 {
     delete[] indices;
 }
 
-// Explicit instantiation for the types you need
+// Instanciação explícita para os tipos necessários
 template class Node<int>;
 template class Node<float>;
 template class Node<double>;
 template class Node<std::string>;
 template class Node<time_t>;
-// Add more types as needed
+// Adicione mais tipos conforme necessário
