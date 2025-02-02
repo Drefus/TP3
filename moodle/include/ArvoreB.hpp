@@ -1,5 +1,5 @@
-#ifndef AVB_HPP
-#define AVB_HPP
+#ifndef ARVOREB_HPP
+#define ARVOREB_HPP
 
 #include "Node.hpp"
 #include <string>
@@ -8,26 +8,31 @@ template <typename T>
 class ArvoreB
 {
 private:
-    Node<T> *root;
-    int tam = 0;
+    Node<T> *raiz;   // raiz da árvore
+    int tamanho = 0; // tamanho da árvore
 
-    void insert(Node<T> *&node, T value, int index);
-    void balance(Node<T> *&node);
+    void inserir(Node<T> *&no, T valor, int indice);
+    void balancear(Node<T> *&no);
 
-    void rightRotate(Node<T> *&node);
+    void rotacaoDireita(Node<T> *&no);
 
-    void leftRotate(Node<T> *&node);
+    void rotacaoEsquerda(Node<T> *&no);
 
-    Node<T> *search(T value);
+    Node<T> *buscar(T valor);
 
-    Node<T> *search(Node<T> *node, T value);
+    Node<T> *buscar(Node<T> *no, T valor);
 
-    void searchWithOpInTree(Node<T> *node, T value, const std::string &op, bool *&result, int tam);
+    void buscarComOperacaoNaArvore(Node<T> *no, T valor, const std::string &op, bool *&resultado, int tamanho);
+
+    int altura(Node<T> *no);
+
+    void deletarNo(Node<T> *&no);
 
 public:
-    ArvoreB() : root(nullptr) {}
-    void insert(T value, int index);
-    bool *searchWithOp(T value, const std::string &op, int tam);
+    ArvoreB() : raiz(nullptr) {}
+    ~ArvoreB();
+    void inserir(T valor, int indice);
+    bool *buscarComOperacao(T valor, const std::string &op, int tamanho);
 };
 
-#endif // AVB_HPP
+#endif // ARVOREB_HPP

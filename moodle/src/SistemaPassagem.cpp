@@ -1,6 +1,6 @@
 #include "SistemaPassagem.hpp"
-#include "Voo.hpp"     // Ensure Voo class is included
-#include "ArvoreB.hpp" // Ensure ArvoreB class is included
+#include "Voo.hpp"     // Certifique-se de que a classe Voo está incluída
+#include "ArvoreB.hpp" // Certifique-se de que a classe ArvoreB está incluída
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -8,49 +8,52 @@
 #include <fstream>
 #include <ctime>
 
-std::string *split(const std::string &str, const std::string &delimiter, int &numTokens)
+// Função utilitária para dividir uma string em tokens
+std::string *dividir(const std::string &str, const std::string &delimitador, int &numTokens)
 {
     size_t pos = 0;
     size_t start = 0;
     numTokens = 0;
 
-    while ((pos = str.find(delimiter, start)) != std::string::npos)
+    while ((pos = str.find(delimitador, start)) != std::string::npos)
     {
         numTokens++;
-        start = pos + delimiter.length();
+        start = pos + delimitador.length();
     }
-    numTokens++; // For the last token
+    numTokens++; // Para o último token
 
     std::string *tokens = new std::string[numTokens];
     start = 0;
     int index = 0;
 
-    while ((pos = str.find(delimiter, start)) != std::string::npos)
+    while ((pos = str.find(delimitador, start)) != std::string::npos)
     {
         tokens[index++] = str.substr(start, pos - start);
-        start = pos + delimiter.length();
+        start = pos + delimitador.length();
     }
     tokens[index] = str.substr(start);
 
     return tokens;
 }
 
-time_t convertStringToTimeT(const std::string &dateTimeStr)
+// Função para converter string para time_t
+time_t converterStringParaTimeT(const std::string &dateTimeStr)
 {
     struct tm tm;
-    int year, month, day, hour, min;
-    sscanf(dateTimeStr.c_str(), "%d-%d-%dT%d:%d", &year, &month, &day, &hour, &min);
-    tm.tm_year = year - 1900;
-    tm.tm_mon = month - 1;
-    tm.tm_mday = day;
-    tm.tm_hour = hour;
+    int ano, mes, dia, hora, min;
+    sscanf(dateTimeStr.c_str(), "%d-%d-%dT%d:%d", &ano, &mes, &dia, &hora, &min);
+    tm.tm_year = ano - 1900;
+    tm.tm_mon = mes - 1;
+    tm.tm_mday = dia;
+    tm.tm_hour = hora;
     tm.tm_min = min;
     tm.tm_sec = 0;
     tm.tm_isdst = -1;
     return mktime(&tm);
 }
 
-std::string convertTimeTToString(time_t dateTime)
+// Função para converter time_t para string
+std::string converterTimeTParaString(time_t dateTime)
 {
     struct tm *tm = localtime(&dateTime);
     char buf[20];
@@ -58,60 +61,17 @@ std::string convertTimeTToString(time_t dateTime)
     return std::string(buf);
 }
 
-void SistemaPassagem::readData(std::string filename)
+// Funções de comparação
+int compararPreco(Voo a, Voo b)
 {
-    std::ifstream file(filename);
-    if (!file.is_open())
-    {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return;
-    }
-
-    file >> numDeVoos;
-    voos = new Voo[numDeVoos];
-    for (int i = 0; i < numDeVoos; i++)
-    {
-        std::string origem, destino;
-        double preco = 0.0;
-        int assentos = 0, paradas = 0;
-        time_t partida = 0, chegada = 0;
-        std::string partidaStr, chegadaStr;
-        file >> origem >> destino >> preco >> assentos >> partidaStr >> chegadaStr >> paradas;
-        partida = convertStringToTimeT(partidaStr);
-        chegada = convertStringToTimeT(chegadaStr);
-
-        voos[i] = Voo(origem, destino, preco, assentos, partida, chegada, paradas);
-        org->insert(origem, i);
-        dst->insert(destino, i);
-        prc->insert(preco, i);
-        sea->insert(assentos, i);
-        dep->insert(partida, i);
-        arr->insert(chegada, i);
-        sto->insert(paradas, i);
-        dur->insert(difftime(chegada, partida), i);
-    }
-
-    file >> numDeOps;
-    for (int i = 0; i < numDeOps; i++)
-    {
-        linhaOP line;
-        file >> line.numDeResultados >> line.ordenation >> line.op;
-        runOp(line);
-    }
-
-    file.close();
-}
-
-int comparePreco(Voo a, Voo b)
-{
-
     if (a.getPreco() == b.getPreco())
     {
         return 0;
     }
     return a.getPreco() < b.getPreco() ? -1 : 1;
 }
-int compareDuracao(Voo a, Voo b)
+
+int compararDuracao(Voo a, Voo b)
 {
     if (a.getDuracao() == b.getDuracao())
     {
@@ -120,7 +80,7 @@ int compareDuracao(Voo a, Voo b)
     return a.getDuracao() < b.getDuracao() ? -1 : 1;
 }
 
-int compareParadas(Voo a, Voo b)
+int compararParadas(Voo a, Voo b)
 {
     if (a.getParadas() == b.getParadas())
     {
@@ -129,11 +89,27 @@ int compareParadas(Voo a, Voo b)
     return a.getParadas() < b.getParadas() ? -1 : 1;
 }
 
-void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, Voo), int (*desempate2)(Voo, Voo))
+// Função para encontrar o comparador baseado em um caractere
+int (*encontrarComparador(char c))(Voo, Voo)
 {
-    for (int i = 0; i < tam; i++)
+    switch (c)
     {
-        for (int j = i + 1; j < tam; j++)
+    case 'p':
+        return compararPreco;
+    case 'd':
+        return compararDuracao;
+    case 's':
+        return compararParadas;
+    }
+    return nullptr;
+}
+
+// Função de ordenação estável
+void ordenarEstavel(Voo *arr, int tamanho, int (*comp)(Voo, Voo), int (*desempate1)(Voo, Voo), int (*desempate2)(Voo, Voo))
+{
+    for (int i = 0; i < tamanho; i++)
+    {
+        for (int j = i + 1; j < tamanho; j++)
         {
             if (comp(arr[i], arr[j]) > 0)
             {
@@ -143,13 +119,13 @@ void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, 
             }
             else if (comp(arr[i], arr[j]) == 0)
             {
-                if (desempate(arr[i], arr[j]) > 0)
+                if (desempate1(arr[i], arr[j]) > 0)
                 {
                     Voo temp = arr[i];
                     arr[i] = arr[j];
                     arr[j] = temp;
                 }
-                else if (desempate(arr[i], arr[j]) == 0)
+                else if (desempate1(arr[i], arr[j]) == 0)
                 {
                     if (desempate2(arr[i], arr[j]) > 0)
                     {
@@ -163,144 +139,202 @@ void stableSort(Voo *arr, int tam, int (*comp)(Voo, Voo), int (*desempate)(Voo, 
     }
 }
 
-int (*findComp(char c))(Voo, Voo)
+// Métodos da classe SistemaPassagem
+void SistemaPassagem::lerDados(std::string nomeArquivo)
 {
-    switch (c)
+    std::ifstream arquivo(nomeArquivo);
+    if (!arquivo.is_open())
     {
-    case 'p':
-        return comparePreco;
-    case 'd':
-        return compareDuracao;
-    case 's':
-        return compareParadas;
+        std::cerr << "Erro ao abrir o arquivo: " << nomeArquivo << std::endl;
+        return;
     }
-    return nullptr;
+
+    arquivo >> numVoos;
+    voos = new Voo[numVoos];
+    for (int i = 0; i < numVoos; i++)
+    {
+        std::string origem, destino;
+        double preco = 0.0;
+        int assentos = 0, paradas = 0;
+        time_t partida = 0, chegada = 0;
+        std::string partidaStr, chegadaStr;
+        arquivo >> origem >> destino >> preco >> assentos >> partidaStr >> chegadaStr >> paradas;
+        partida = converterStringParaTimeT(partidaStr);
+        chegada = converterStringParaTimeT(chegadaStr);
+        voos[i] = Voo(origem, destino, preco, assentos, partida, chegada, paradas);
+        arvoreOrigem->inserir(origem, i);
+        arvoreDestino->inserir(destino, i);
+        arvorePreco->inserir(preco, i);
+        arvoreAssentos->inserir(assentos, i);
+        arvorePartida->inserir(partida, i);
+        arvoreChegada->inserir(chegada, i);
+        arvoreParadas->inserir(paradas, i);
+        arvoreDuracao->inserir(difftime(chegada, partida), i);
+    }
+
+    arquivo >> numOperacoes;
+    for (int i = 0; i < numOperacoes; i++)
+    {
+        LinhaOperacao linha;
+        arquivo >> linha.numResultados >> linha.criterioOrdenacao >> linha.operacao;
+        executarOperacao(linha);
+    }
+
+    arquivo.close();
 }
 
-void SistemaPassagem::runOp(linhaOP line)
+// Função para limpar a string de operação
+std::string limparStringOperacao(const std::string &operacao)
 {
-
-    std::string clearOp = "";
-    for (char c : line.op)
+    std::string operacaoLimpa = "";
+    for (char c : operacao)
     {
         if (c != '(' && c != ')')
         {
-            clearOp += c;
+            operacaoLimpa += c;
         }
     }
+    return operacaoLimpa;
+}
+
+// Função para executar uma operação
+void SistemaPassagem::executarOperacao(LinhaOperacao linha)
+{
+    std::string operacaoLimpa = limparStringOperacao(linha.operacao);
 
     int numOp;
 
-    std::string *ops = split(clearOp, "&&", numOp);
+    std::string *ops = dividir(operacaoLimpa, "&&", numOp);
 
-    bool *result = processar(ops, 0, numOp);
+    bool *resultado = processarOperacoes(ops, 0, numOp);
 
-    int countResult = 0;
-    for (int i = 0; i < numDeVoos; i++)
+    int countResultado = 0;
+    for (int i = 0; i < numVoos; i++)
     {
-        if (result[i])
+        if (resultado[i])
         {
-            countResult++;
-        }
-    }
-    Voo *resultados = new Voo[countResult];
-    int indexResult = 0;
-    for (int i = 0; i < numDeVoos; i++)
-    {
-        if (result[i])
-        {
-            resultados[indexResult] = voos[i];
-            indexResult++;
+            countResultado++;
         }
     }
 
-    stableSort(resultados, countResult, findComp(line.ordenation[0]), findComp(line.ordenation[1]), findComp(line.ordenation[2]));
-
-    std::cout << line.numDeResultados << " " << line.ordenation << " " << line.op << std::endl;
-    for (int i = 0; i < line.numDeResultados; i++)
+    Voo *resultados = new Voo[countResultado];
+    int indexResultado = 0;
+    for (int i = 0; i < numVoos; i++)
     {
-        std::cout << resultados[i].getOrigem() << " " << resultados[i].getDestino() << " " << resultados[i].getPreco() << " " << resultados[i].getAssentos() << " " << convertTimeTToString(resultados[i].getPartida()) << " " << convertTimeTToString(resultados[i].getChegada()) << " " << resultados[i].getParadas() << std::endl;
+        if (resultado[i])
+        {
+            resultados[indexResultado] = voos[i];
+            indexResultado++;
+        }
     }
+
+    ordenarEstavel(resultados, countResultado, encontrarComparador(linha.criterioOrdenacao[0]), encontrarComparador(linha.criterioOrdenacao[1]), encontrarComparador(linha.criterioOrdenacao[2]));
+
+    std::cout << linha.numResultados << " " << linha.criterioOrdenacao << " " << linha.operacao << std::endl;
+    for (int i = 0; i < linha.numResultados; i++)
+    {
+        std::cout << resultados[i].getOrigem() << " " << resultados[i].getDestino() << " " << resultados[i].getPreco() << " " << resultados[i].getAssentos() << " " << converterTimeTParaString(resultados[i].getPartida()) << " " << converterTimeTParaString(resultados[i].getChegada()) << " " << resultados[i].getParadas() << std::endl;
+    }
+
+    delete[] resultados;
+    delete[] resultado;
+    delete[] ops;
 }
 
-bool *SistemaPassagem::processar(std::string *ops, int index, int maxindex)
+// Função para processar operações
+bool *SistemaPassagem::processarOperacoes(std::string *operacoes, int indice, int maxIndice)
 {
-    if (index == maxindex)
+    if (indice == maxIndice)
     {
-        bool *result = new bool[numDeVoos];
-        for (int i = 0; i < numDeVoos; i++)
+        bool *resultado = new bool[numVoos];
+        for (int i = 0; i < numVoos; i++)
         {
-            result[i] = true;
+            resultado[i] = true;
         }
-        return result;
+        return resultado;
     }
-    std::string op = ops[index];
-    std::string type = op.substr(0, 3);
+    std::string op = operacoes[indice];
+    std::string tipo = op.substr(0, 3);
     std::string boolOp = op.substr(3, 2);
-    std::string value = op.substr(5, op.size() - 5);
-    if (type == "org")
+    std::string valor = op.substr(5, op.size() - 5);
+    if (tipo == "org")
     {
-        return AndResults(org->searchWithOp(value, boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreOrigem->buscarComOperacao(valor, boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "dst")
+    else if (tipo == "dst")
     {
-        return AndResults(dst->searchWithOp(value, boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreDestino->buscarComOperacao(valor, boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "prc")
+    else if (tipo == "prc")
     {
-        return AndResults(prc->searchWithOp(std::stod(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvorePreco->buscarComOperacao(std::stod(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "sea")
+    else if (tipo == "sea")
     {
-        return AndResults(sea->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreAssentos->buscarComOperacao(std::stoi(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "dep")
+    else if (tipo == "dep")
     {
-        return AndResults(dep->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvorePartida->buscarComOperacao(std::stoi(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "arr")
+    else if (tipo == "arr")
     {
-        return AndResults(arr->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreChegada->buscarComOperacao(std::stoi(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "sto")
+    else if (tipo == "sto")
     {
-        return AndResults(sto->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreParadas->buscarComOperacao(std::stoi(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
-    else if (type == "dur")
+    else if (tipo == "dur")
     {
-        return AndResults(dur->searchWithOp(std::stoi(value), boolOp, numDeVoos), processar(ops, index + 1, maxindex), numDeVoos);
+        return combinarResultados(arvoreDuracao->buscarComOperacao(std::stoi(valor), boolOp, numVoos), processarOperacoes(operacoes, indice + 1, maxIndice), numVoos);
     }
 
     return nullptr;
 }
 
-bool *SistemaPassagem::AndResults(bool *result1, bool *result2, int tam)
+// Função para combinar resultados de duas operações
+bool *SistemaPassagem::combinarResultados(bool *resultado1, bool *resultado2, int tamanho)
 {
-    bool *result = new bool[tam];
-    for (int i = 0; i < tam; i++)
+    bool *resultado = new bool[tamanho];
+    for (int i = 0; i < tamanho; i++)
     {
-        result[i] = result1[i] && result2[i];
+        resultado[i] = resultado1[i] && resultado2[i];
     }
-    return result;
+    delete[] resultado1;
+    delete[] resultado2;
+    return resultado;
 }
 
+// Construtor e Destrutor
 SistemaPassagem::SistemaPassagem()
+    : arvoreOrigem(nullptr), arvoreDestino(nullptr), arvorePreco(nullptr), arvoreAssentos(nullptr), arvorePartida(nullptr), arvoreChegada(nullptr), arvoreParadas(nullptr), arvoreDuracao(nullptr), voos(nullptr)
 {
 }
 
 SistemaPassagem::~SistemaPassagem()
 {
+    delete arvoreOrigem;
+    delete arvoreDestino;
+    delete arvorePreco;
+    delete arvoreAssentos;
+    delete arvorePartida;
+    delete arvoreChegada;
+    delete arvoreParadas;
+    delete arvoreDuracao;
+    delete[] voos;
 }
 
-void SistemaPassagem::run(std::string filename)
+// Função para executar o sistema de passagem
+void SistemaPassagem::executar(std::string nomeArquivo)
 {
-    org = new ArvoreB<std::string>();
-    dst = new ArvoreB<std::string>();
-    prc = new ArvoreB<double>();
-    sea = new ArvoreB<int>();
-    dep = new ArvoreB<time_t>();
-    arr = new ArvoreB<time_t>();
-    sto = new ArvoreB<int>();
-    dur = new ArvoreB<long int>();
-    readData(filename);
+    arvoreOrigem = new ArvoreB<std::string>();
+    arvoreDestino = new ArvoreB<std::string>();
+    arvorePreco = new ArvoreB<double>();
+    arvoreAssentos = new ArvoreB<int>();
+    arvorePartida = new ArvoreB<time_t>();
+    arvoreChegada = new ArvoreB<time_t>();
+    arvoreParadas = new ArvoreB<int>();
+    arvoreDuracao = new ArvoreB<long int>();
+    lerDados(nomeArquivo);
 }

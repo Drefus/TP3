@@ -1,43 +1,45 @@
 #ifndef SISTEMAPASSAGEM_HPP
 #define SISTEMAPASSAGEM_HPP
+
 #include "ArvoreB.hpp"
 #include <string>
 #include <ctime>
 #include "Voo.hpp"
 
-typedef struct linhaOP
+// Estrutura para armazenar uma linha de operação
+typedef struct LinhaOperacao
 {
-    int numDeResultados;
-    std::string ordenation;
-    std::string op;
-} linhaOP;
+    int numResultados;             // Número de resultados esperados
+    std::string criterioOrdenacao; // Critério de ordenação
+    std::string operacao;          // Operação a ser executada
+} LinhaOperacao;
 
 class SistemaPassagem
 {
 private:
-    ArvoreB<std::string> *org; // Origem do vôo
-    ArvoreB<std::string> *dst; // Destino do vôo
-    ArvoreB<double> *prc;      // Preço de uma passagem
-    ArvoreB<int> *sea;         // Número de assentos disponíveis
-    ArvoreB<time_t> *dep;      //  Data-hora de partida
-    ArvoreB<time_t> *arr;      // Data-hora de chegada
-    ArvoreB<int> *sto;         // Número de paradas
-    ArvoreB<long int> *dur;    // Duração total do vôo
-    int numDeVoos = 0;
-    Voo *voos;
-    int numDeOps = 0;
+    ArvoreB<std::string> *arvoreOrigem;  // Árvore para armazenar as origens dos voos
+    ArvoreB<std::string> *arvoreDestino; // Árvore para armazenar os destinos dos voos
+    ArvoreB<double> *arvorePreco;        // Árvore para armazenar os preços das passagens
+    ArvoreB<int> *arvoreAssentos;        // Árvore para armazenar o número de assentos disponíveis
+    ArvoreB<time_t> *arvorePartida;      // Árvore para armazenar as datas e horas de partida
+    ArvoreB<time_t> *arvoreChegada;      // Árvore para armazenar as datas e horas de chegada
+    ArvoreB<int> *arvoreParadas;         // Árvore para armazenar o número de paradas
+    ArvoreB<long int> *arvoreDuracao;    // Árvore para armazenar a duração total dos voos
+    int numVoos = 0;                     // Número de voos
+    Voo *voos;                           // Array de voos
+    int numOperacoes = 0;                // Número de operações
 
-    void readData(std::string filename);
-    void runOp(linhaOP line);
+    void lerDados(std::string nomeArquivo);     // Função para ler os dados do arquivo
+    void executarOperacao(LinhaOperacao linha); // Função para executar uma operação
 
-    bool *processar(std::string *ops, int index, int maxindex);
+    bool *processarOperacoes(std::string *operacoes, int indice, int maxIndice); // Função para processar operações
 
-    bool *AndResults(bool *result1, bool *result2, int tam);
+    bool *combinarResultados(bool *resultado1, bool *resultado2, int tamanho); // Função para combinar resultados de duas operações
 
 public:
-    SistemaPassagem();
-    ~SistemaPassagem();
-    void run(std::string filename);
+    SistemaPassagem();                      // Construtor
+    ~SistemaPassagem();                     // Destrutor
+    void executar(std::string nomeArquivo); // Função para executar o sistema de passagem
 };
 
-#endif
+#endif // SISTEMAPASSAGEM_HPP

@@ -1,22 +1,20 @@
 #ifndef NODE_HPP
 #define NODE_HPP
 
-#include <array>
-
 template <typename T>
 class Node
 {
 public:
-    T value;
-    int *indices;
-    Node *head;
-    Node *left;
-    Node *right;
-    int qIndices = 0;
+    T valor;            // Valor armazenado no nó
+    int *indices;       // Array de índices
+    Node *cabeca;       // Ponteiro para o nó cabeça
+    Node *esquerda;     // Ponteiro para o nó esquerdo
+    Node *direita;      // Ponteiro para o nó direito
+    int qntIndices = 0; // Quantidade de índices
     Node();
     Node(T val);
-    int height();
-    void addIndex(int index);
+    ~Node();
+    void adicionarIndice(int indice); // Adiciona um índice ao array de índices
 };
 
 #endif // NODE_HPP
